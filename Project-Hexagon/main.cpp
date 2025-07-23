@@ -1,16 +1,15 @@
 ﻿
 #include <iostream>
-#include <fstream>
+
 #include <sstream>
 #include <windows.h>
-#include <conio.h>
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <limits>
 #include <string>
 #include <iomanip>
-
+#include <unordered_set>
 #include <SFML/Graphics.hpp>
 
 #include "mouse.hpp"
@@ -125,7 +124,30 @@ class Map {
 		
 		return nullptr;
 	}
-	
+
+	std::unordered_set<Tile*> getTiles(int q, int r, int s, int range) {
+		std::unordered_set<Tile*> set;
+
+		for (int qq = -range; qq <= range; qq++) {
+			for (int rr = -range; rr <= range; rr++) {
+				for (int ss = -range; ss <= range; ss++) {
+					Tile* tile = getTile(q+qq, r+rr, s+ss);
+					if (tile != nullptr)
+						set.insert(tile);
+				}
+			}
+		}
+
+		/*
+		for each - N ≤ q ≤ + N:
+			for each - N ≤ r ≤ + N :
+				for each - N ≤ s ≤ + N :
+					if q + r + s == 0 :
+						results.append(cube_add(center, Cube(q, r, s)))
+		*/
+		return set;
+	}
+
 	sf::Vector2f getSize() {
 		if (tiles.empty())
 			return sf::Vector2f(0.f, 0.f);
@@ -238,10 +260,15 @@ int main() {
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
 				window->close();
-
-			
 		}
+
+		// update
 		
+		for (auto& t : mapa->getTiles(2, 2, -4, 1)) {
+			t->color = sf::Color(128, 48, 128);
+		}
+
+		// render
 		sf::View v;
 		v = window->getView();
 		v.setCenter(0,0);
