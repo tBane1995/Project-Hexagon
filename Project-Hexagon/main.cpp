@@ -21,22 +21,22 @@ sf::RenderWindow *window;
 float tile_radius = 24;
 
 std::vector<sf::Vector3i> hex_neighbours = {
+	sf::Vector3i(0, -1, +1),
 	 sf::Vector3i(+1, -1, 0),
 	 sf::Vector3i(+1, 0, -1),
 	 sf::Vector3i(0, +1, -1), 
 	 sf::Vector3i(-1, +1, 0),
-	 sf::Vector3i(-1, 0, +1),
-	 sf::Vector3i(0, -1, +1)
+	 sf::Vector3i(-1, 0, +1)
+	 
 };
 
 bool isPointInTriangle(sf::Vector2f A, sf::Vector2f B, sf::Vector2f C, sf::Vector2f P) {
+	float denominator = ((B.y - C.y) * (A.x - C.x) + (C.x - B.x) * (A.y - C.y));
+	float w1 = ((B.y - C.y) * (P.x - C.x) + (C.x - B.x) * (P.y - C.y)) / denominator;
+	float w2 = ((C.y - A.y) * (P.x - C.x) + (A.x - C.x) * (P.y - C.y)) / denominator;
+	float w3 = 1.0f - w1 - w2;
 
-	float w1 = (C.x * (A.y - C.y) + (P.y - C.y) * (A.x - C.x) - P.x * (A.y - C.y)) /
-		((B.y - C.y) * (A.x - C.x) - (B.x - C.x) * (A.y - C.y));
-
-	float w2 = (P.y - C.y - w1 * (B.y - C.y)) / (A.y - C.y);
-
-	return w1 >= 0 && w2 >= 0 && (w1 + w2) <= 1;
+	return (w1 >= 0) && (w2 >= 0) && (w3 >= 0);
 }
 
 class Tile {
@@ -51,10 +51,10 @@ class Tile {
 		coords.x = q;
 		coords.y = r;
 		coords.z = -q - r;
-		
-		position.x = tile_radius * std::sqrt(3.0f) * (float(coords.x) + 0.5f * float(coords.y));
-		position.y = tile_radius * 3.0f / 2.0f * float(coords.y);
-		
+
+		position.x = tile_radius * 3.0f / 2.0f * float(coords.x);
+		position.y = tile_radius * std::sqrt(3.0f) * (float(coords.y) + 0.5f * float(coords.x));
+
 		for(int dir=0;dir<6;dir++)
 			neighbours.push_back(nullptr);
 
@@ -62,10 +62,10 @@ class Tile {
 		hexagon.setPointCount(6);
 		
 		for (int i = 0; i < 6; i++) {
-			float deg = i * 60 - 30;
-			float rad = deg * M_PI / 180.0f;
-			float xx = position.x + tile_radius * std::cos(rad);
-			float yy = position.y + tile_radius * std::sin(rad);
+			float deg = i * 60 + 30;
+			float rad = -deg * M_PI / 180.0f;
+			float xx = position.x - tile_radius * std::sin(rad);
+			float yy = position.y - tile_radius * std::cos(rad);
 
 			hexagon.setPoint(i, sf::Vector2f(xx, yy));
 		}
@@ -79,10 +79,11 @@ class Tile {
 
 		for (int i = 0; i < 6; i++) {
 
+			sf::Vector2f vc = position;
 			sf::Vector2f v1 = hexagon.getPoint(i);
 			sf::Vector2f v2 = hexagon.getPoint((i+1)%6);
 
-			if (isPointInTriangle(position, v1, v2, worldMousePosition)) {
+			if (isPointInTriangle(vc, v1, v2, worldMousePosition)) {
 				hexagon.setFillColor(sf::Color(128, 48, 8));
 				return;
 			}
@@ -138,13 +139,6 @@ class Map {
 			}
 		}
 
-		/*
-		for each - N ≤ q ≤ + N:
-			for each - N ≤ r ≤ + N :
-				for each - N ≤ s ≤ + N :
-					if q + r + s == 0 :
-						results.append(cube_add(center, Cube(q, r, s)))
-		*/
 		return set;
 	}
 
@@ -152,40 +146,37 @@ class Map {
 		if (tiles.empty())
 			return sf::Vector2f(0.f, 0.f);
 
-		float min_x = tiles.back()->coords.x;
-		float max_x = tiles.back()->coords.x;
-		float min_y = tiles.back()->coords.y;
-		float max_y = tiles.back()->coords.y;
+		float min_x = tiles[0]->hexagon.getPoint(0).x;
+		float max_x = min_x;
+		float min_y = tiles[0]->hexagon.getPoint(0).y;
+		float max_y = min_y;
 
 		for (auto& tile : tiles) {
-			float x = tile_radius * std::sqrt(3.0f) * (float(tile->coords.x) + 0.5f * float(tile->coords.y));
-			float y = tile_radius * 3.0f / 2.0f * float(tile->coords.y);
 
 			for (int i = 0; i < 6; ++i) {
-				float deg = i * 60 - 30;
-				float rad = deg * M_PI / 180.0f;
-				float xx = x + tile_radius * std::cos(rad);
-				float yy = y + tile_radius * std::sin(rad);
+
+				float xx = tile->hexagon.getPoint(i).x;
+				float yy = tile->hexagon.getPoint(i).y;
 
 				if (xx < min_x) min_x = xx;
 				if (xx > max_x) max_x = xx;
 				if (yy < min_y) min_y = yy;
 				if (yy > max_y) max_y = yy;
-			}
+}
 		}
 
 		return sf::Vector2f(max_x - min_x, max_y - min_y);
 	}
 
 	void create(int left, int top, int right, int bottom) {
-		for (int r = top; r < bottom; r++) { 
-		    int r_offset = floor(r/2.0f); 
-		    for (int q = left - r_offset; q < right - r_offset; q++) {
-		        tiles.push_back(new Tile(q, r));
-		    }
-}
+		for (int r = top; r < bottom; r++) {
+			int r_offset = floor(r / 2.0f);
+			for (int q = left - r_offset; q < right - r_offset; q++) {
+				tiles.push_back(new Tile(q, r));
+			}
+		}
 	}
-	
+
 	void create(int n) {
 		for (int q = -n; q <= n; q++) {
 			int r1 = max(-n, -q - n);
@@ -195,7 +186,7 @@ class Map {
 				tiles.push_back(new Tile(q, r));
 			}
 		}
-		
+
 		// center tile neighbours
 		for (auto& tile : tiles) {
 			for (int dir = 0; dir < 6; dir++) {
@@ -206,12 +197,12 @@ class Map {
 			}
 		}
 
-		Tile* tile = getTile(0,0);
+		Tile* tile = getTile(0, 0);
 		//std::cout<<tile->coords.x<<","<<tile->coords.y<<","<<tile->coords.z<<"\n";
-		for(int dir=0;dir<6;dir++){
+		for (int dir = 0; dir < 6; dir++) {
 			Tile* ngbr = tile->neighbours[dir];
-			if(ngbr!=nullptr)
-				ngbr->color=sf::Color(48,48,128);
+			if (ngbr != nullptr)
+				ngbr->color = sf::Color(48, 48, 128);
 		}
 	}
 
@@ -222,16 +213,16 @@ class Map {
 	}
 
 	void draw() {
-		for (auto &tile : tiles) {
+		for (auto& tile : tiles) {
 			tile->draw();
 		}
 	}
 };
 
 int main() {
-	window = new sf::RenderWindow(sf::VideoMode(800,600), "Project Hexagon");
+	window = new sf::RenderWindow(sf::VideoMode(800, 600), "Project Hexagon");
 
-	Map *mapa = new Map();
+	Map* mapa = new Map();
 
 	sf::Font font;
 	font.loadFromFile("C:/Windows/Fonts/arial.ttf");
@@ -244,8 +235,8 @@ int main() {
 		worldMousePosition = window->mapPixelToCoords(mousePosition);
 
 		mapa->cursorHover();
-		
-		
+
+
 		float FPS = 1.0f / FPSClock.restart().asSeconds();
 		if (FPSClockUpdate.getElapsedTime().asSeconds() > 0.5f) {
 
@@ -260,10 +251,14 @@ int main() {
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
 				window->close();
+
+			
 		}
 
 		// update
 		
+		mapa->getTile(0, 0)->neighbours[0]->color = sf::Color(128, 128, 128);
+
 		for (auto& t : mapa->getTiles(2, 2, -4, 1)) {
 			t->color = sf::Color(128, 48, 128);
 		}
