@@ -1,6 +1,16 @@
-#include <vector>
-#include <cmath>
+﻿
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <windows.h>
+#include <conio.h>
+#include <vector>
+#include <algorithm>
+#include <numeric>
+#include <limits>
+#include <string>
+#include <iomanip>
+
 #include <SFML/Graphics.hpp>
 
 #include "mouse.hpp"
@@ -120,10 +130,10 @@ class Map {
 		if (tiles.empty())
 			return sf::Vector2f(0.f, 0.f);
 
-		float min_x = std::numeric_limits<float>::max();
-		float max_x = std::numeric_limits<float>::lowest();
-		float min_y = std::numeric_limits<float>::max();
-		float max_y = std::numeric_limits<float>::lowest();
+		float min_x = tiles.back()->coords.x;
+		float max_x = tiles.back()->coords.x;
+		float min_y = tiles.back()->coords.y;
+		float max_y = tiles.back()->coords.y;
 
 		for (auto& tile : tiles) {
 			float x = tile_radius * std::sqrt(3.0f) * (float(tile->coords.x) + 0.5f * float(tile->coords.y));
@@ -156,8 +166,8 @@ class Map {
 	
 	void create(int n) {
 		for (int q = -n; q <= n; q++) {
-			int r1 = std::max(-n, -q - n);
-			int r2 = std::min(n, -q + n);
+			int r1 = max(-n, -q - n);
+			int r2 = min(n, -q + n);
 
 			for (int r = r1; r <= r2; r++) {
 				tiles.push_back(new Tile(q, r));
@@ -200,7 +210,11 @@ int main() {
 	window = new sf::RenderWindow(sf::VideoMode(800,600), "Project Hexagon");
 
 	Map *mapa = new Map();
-	
+
+	sf::Font font;
+	font.loadFromFile("C:/Windows/Fonts/arial.ttf");
+	sf::Clock FPSClock;
+	sf::Clock FPSClockUpdate;	// clock for show FPS in main loop of Editor
 
 	while (window->isOpen()) {
 
@@ -208,6 +222,16 @@ int main() {
 		worldMousePosition = window->mapPixelToCoords(mousePosition);
 
 		mapa->cursorHover();
+		
+		
+		float FPS = 1.0f / FPSClock.restart().asSeconds();
+		if (FPSClockUpdate.getElapsedTime().asSeconds() > 0.5f) {
+
+			std::ostringstream ss;
+			ss << std::fixed << std::setprecision(2) << FPS << " FPS";
+			window->setTitle("Project Hexagon - " + ss.str());
+			FPSClockUpdate.restart();
+		}
 
 		// Handle screen resizes
 		sf::Event event;
