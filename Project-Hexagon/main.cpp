@@ -63,8 +63,8 @@ class Tile {
 		
 		for (int i = 0; i < 6; i++) {
 			float deg = i * 60 + 30;
-			float rad = -deg * M_PI / 180.0f;
-			float xx = position.x - tile_radius * std::sin(rad);
+			float rad = deg * M_PI / 180.0f;
+			float xx = position.x + tile_radius * std::sin(rad);
 			float yy = position.y - tile_radius * std::cos(rad);
 
 			hexagon.setPoint(i, sf::Vector2f(xx, yy));
@@ -142,6 +142,37 @@ class Map {
 		return set;
 	}
 
+	std::unordered_set<Tile*> getTilesRing(int q, int r, int s, int ring_size) {
+		std::unordered_set<Tile*> set;
+
+		if (ring_size == 0) {
+			Tile* center = getTile(q, r, s);
+			if (center != nullptr)
+				set.insert(center);
+			return set;
+		}
+
+		int qq = q + hex_neighbours[4].x * ring_size;
+		int rr = r + hex_neighbours[4].y * ring_size;
+		int ss = s + hex_neighbours[4].z * ring_size;
+
+		Tile* tt = getTile(qq, rr, ss);
+
+		for (int i = 0; i < 6; i++) {
+			for (int j = 0; j < ring_size; j++) {
+				if (tt != nullptr)
+					set.insert(tt);
+
+				if (tt != nullptr)
+					tt = tt->neighbours[i];
+				else
+					break; // przerwij jeśli nie ma sąsiada
+			}
+		}
+
+		return set;
+	}
+
 	sf::Vector2f getSize() {
 		if (tiles.empty())
 			return sf::Vector2f(0.f, 0.f);
@@ -197,13 +228,12 @@ class Map {
 			}
 		}
 
-		Tile* tile = getTile(0, 0);
-		//std::cout<<tile->coords.x<<","<<tile->coords.y<<","<<tile->coords.z<<"\n";
-		for (int dir = 0; dir < 6; dir++) {
-			Tile* ngbr = tile->neighbours[dir];
-			if (ngbr != nullptr)
-				ngbr->color = sf::Color(48, 48, 128);
-		}
+		for (auto& t : getTiles(0, 0, 0, 2))
+			t->color = sf::Color(48, 48, 128);
+
+		for (auto& t : getTilesRing(0, 0, 0, 6))
+			t->color = sf::Color(64, 64, 64);
+
 	}
 
 	void cursorHover() {
@@ -236,7 +266,6 @@ int main() {
 
 		mapa->cursorHover();
 
-
 		float FPS = 1.0f / FPSClock.restart().asSeconds();
 		if (FPSClockUpdate.getElapsedTime().asSeconds() > 0.5f) {
 
@@ -246,22 +275,26 @@ int main() {
 			FPSClockUpdate.restart();
 		}
 
+		static int i = 0;
+
 		// Handle screen resizes
 		sf::Event event;
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
 				window->close();
 
-			
+			if (event.type == sf::Event::KeyPressed && sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+				i += 1;
+				i %= 6;
+			}
+				
 		}
 
 		// update
-		
-		mapa->getTile(0, 0)->neighbours[0]->color = sf::Color(128, 128, 128);
-
-		for (auto& t : mapa->getTiles(2, 2, -4, 1)) {
-			t->color = sf::Color(128, 48, 128);
-		}
+		sf::CircleShape c(2);
+		c.setOrigin(2, 2);
+		c.setFillColor(sf::Color::White);
+		c.setPosition(mapa->getTile(0, 0, 0)->hexagon.getPoint(i));
 
 		// render
 		sf::View v;
@@ -270,6 +303,7 @@ int main() {
 		window->setView(v);
 		window->clear();
 		mapa->draw();
+		window->draw(c);
 		window->display();
 	}
 	return 0;
