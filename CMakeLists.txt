@@ -4,7 +4,11 @@ project(Project-Hexagon VERSION 1.0)
 add_executable(${PROJECT_NAME} Project-Hexagon/main.cpp)
 
 target_sources(${PROJECT_NAME} PRIVATE
-    
+ Project-Hexagon/window.hpp
+ Project-Hexagon/time.hpp
+ Project-Hexagon/camera.hpp
+ Project-Hexagon/mouse.hpp
+ Project-Hexagon/map.hpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES

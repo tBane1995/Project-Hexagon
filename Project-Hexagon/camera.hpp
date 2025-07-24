@@ -5,6 +5,7 @@ class Camera {
 public:
 	sf::Vector2f position;
 	sf::View view;
+	float zoom;
 
 	Camera() {
 		position = sf::Vector2f(0, 0);
