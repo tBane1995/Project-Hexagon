@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include <sstream>
-#include <windows.h>
 #include <vector>
 #include <algorithm>
 #include <numeric>
@@ -10,6 +9,7 @@
 #include <string>
 #include <iomanip>
 #include <unordered_set>
+#include <functional>
 #include <SFML/Graphics.hpp>
 
 #include "window.hpp"
@@ -17,7 +17,10 @@
 #include "camera.hpp"
 #include "mouse.hpp"
 #include "font.hpp"
+#include "elementGUI.hpp"
+#include "palette.hpp"
 #include "map.hpp"
+
 
 
 int main() {
@@ -28,6 +31,7 @@ int main() {
 	load_fonts();
 
 	Map* mapa = new Map();
+	palette = new Palette();
 
 	sf::Text fps_counter_text("0", basic_font, 17);
 	fps_counter_text.setPosition(cam->position - cam->view.getSize()/2.0f + sf::Vector2f(16,16));
@@ -75,11 +79,14 @@ int main() {
 		mousePosition = sf::Mouse::getPosition(*window);
 		worldMousePosition = window->mapPixelToCoords(mousePosition);
 
+		palette->update();
 		// update GUI elements
 		// ..
 		// ..
 		
 		// cursor hovering
+		ElementGUI_hovered = nullptr;
+		palette->cursorHover();
 		mapa->cursorHover();
 
 		float FPS = 1.0f / FPSClock.restart().asSeconds();
@@ -96,6 +103,7 @@ int main() {
 
 		static int i = 0;
 
+
 		// handle events
 		sf::Event event;
 		while (window->pollEvent(event)) {
@@ -106,7 +114,22 @@ int main() {
 				i += 1;
 				i %= 6;
 			}
-				
+
+			if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+				palette->handleEvent(event);
+			}
+
+			if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left) {
+				palette->handleEvent(event);
+				ElementGUI_pressed = nullptr;
+			}
+
+			if (event.type == sf::Event::MouseMoved) {
+				palette->handleEvent(event);
+
+			}
+
+			
 		}
 
 		// update
@@ -134,6 +157,7 @@ int main() {
 		window->clear();
 		mapa->draw();
 		window->draw(c);
+		palette->draw();
 		window->draw(fps_counter_text);
 		window->draw(cam_position_text);
 		window->draw(tile_coords_text);

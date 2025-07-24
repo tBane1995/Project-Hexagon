@@ -9,6 +9,8 @@ target_sources(${PROJECT_NAME} PRIVATE
  Project-Hexagon/camera.hpp
  Project-Hexagon/mouse.hpp
  Project-Hexagon/font.hpp
+ Project-Hexagon/elementGUI.hpp
+ Project-Hexagon/palette.hpp
  Project-Hexagon/map.hpp
 )
 

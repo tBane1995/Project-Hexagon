@@ -3,7 +3,7 @@
 
 #define M_PI 3.14159265358979323846 /* pi */
 
-float tile_radius = 24;
+float tile_radius = 32;
 
 std::vector<sf::Vector3i> hex_neighbours = {
 	sf::Vector3i(0, -1, +1),
@@ -69,7 +69,6 @@ public:
 			sf::Vector2f v2 = hexagon.getPoint((i + 1) % 6);
 
 			if (isPointInTriangle(vc, v1, v2, worldMousePosition)) {
-				hexagon.setFillColor(sf::Color(128, 48, 8));
 				return true;
 			}
 		}
@@ -87,11 +86,12 @@ public:
 class Map {
 public:
 	std::vector<Tile*> tiles;
-	Tile* selected_tile;
+	Tile* selected_tile = nullptr;
 
 	Map() {
 		create(6);
 		//create(0,0,2,2);
+
 	}
 
 	Tile* getTile(int q, int r, int s) {
@@ -187,8 +187,8 @@ public:
 
 	void create(int n) {
 		for (int q = -n; q <= n; q++) {
-			int r1 = max(-n, -q - n);
-			int r2 = min(n, -q + n);
+			int r1 = std::max(-n, -q - n);
+			int r2 = std::min(n, -q + n);
 
 			for (int r = r1; r <= r2; r++) {
 				tiles.push_back(new Tile(q, r));
@@ -214,12 +214,23 @@ public:
 	}
 
 	void cursorHover() {
+		if (selected_tile != nullptr)
+			selected_tile->hexagon.setFillColor(selected_tile->color);
 
 		selected_tile = nullptr;
 
-		for (auto& tile : tiles) {
-			if (tile->cursorHover())
-				selected_tile = tile;
+		if (ElementGUI_hovered == nullptr && ElementGUI_pressed == nullptr) {
+			for (auto& tile : tiles) {
+				if (tile->cursorHover()) {
+					selected_tile = tile;
+				}
+					
+				
+			}
+
+			if(selected_tile != nullptr)
+				selected_tile->hexagon.setFillColor(sf::Color(128, 48, 8));
+
 		}
 	}
 
