@@ -12,11 +12,12 @@
 #include <unordered_set>
 #include <SFML/Graphics.hpp>
 
+#include "window.hpp"
+#include "time.hpp"
+#include "camera.hpp"
 #include "mouse.hpp"
 
 #define M_PI 3.14159265358979323846 /* pi */
-
-sf::RenderWindow *window;
 
 float tile_radius = 24;
 
@@ -250,20 +251,34 @@ class Map {
 };
 
 int main() {
-	window = new sf::RenderWindow(sf::VideoMode(800, 600), "Project Hexagon");
+
+	cam = new Camera();
+	window->setView(cam->view);
 
 	Map* mapa = new Map();
 
 	sf::Font font;
 	font.loadFromFile("C:/Windows/Fonts/arial.ttf");
-	sf::Clock FPSClock;
-	sf::Clock FPSClockUpdate;	// clock for show FPS in main loop of Editor
+
+	sf::Text fps_counter("", font, 17);
+	fps_counter.setPosition(cam->position - cam->view.getSize()/2.0f + sf::Vector2f(16,16));
 
 	while (window->isOpen()) {
+
+		prevTime = currentTime;
+		currentTime = timeClock.getElapsedTime();
+
+		cam->update();
+		window->setView(cam->view);
 
 		mousePosition = sf::Mouse::getPosition(*window);
 		worldMousePosition = window->mapPixelToCoords(mousePosition);
 
+		// update GUI elements
+		// ..
+		// ..
+		
+		// cursor hovering
 		mapa->cursorHover();
 
 		float FPS = 1.0f / FPSClock.restart().asSeconds();
@@ -272,12 +287,13 @@ int main() {
 			std::ostringstream ss;
 			ss << std::fixed << std::setprecision(2) << FPS << " FPS";
 			window->setTitle("Project Hexagon - " + ss.str());
+			fps_counter.setString(ss.str());
 			FPSClockUpdate.restart();
 		}
 
 		static int i = 0;
 
-		// Handle screen resizes
+		// handle events
 		sf::Event event;
 		while (window->pollEvent(event)) {
 			if (event.type == sf::Event::Closed)
@@ -304,6 +320,7 @@ int main() {
 		window->clear();
 		mapa->draw();
 		window->draw(c);
+		window->draw(fps_counter);
 		window->display();
 	}
 	return 0;
