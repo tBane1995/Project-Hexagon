@@ -29,16 +29,45 @@ int main() {
 
 	Map* mapa = new Map();
 
-	sf::Text fps_counter_text("", basic_font, 17);
+	sf::Text fps_counter_text("0", basic_font, 17);
 	fps_counter_text.setPosition(cam->position - cam->view.getSize()/2.0f + sf::Vector2f(16,16));
 
+	sf::Text cam_position_text("", basic_font, 17);
+	cam_position_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16) + sf::Vector2f(0, basic_font.getLineSpacing(17)));
+
+
 	sf::Text tile_coords_text("", basic_font, 17);
-	tile_coords_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16) + sf::Vector2f(0, basic_font.getLineSpacing(17)));
+	tile_coords_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16) + sf::Vector2f(0, 2*basic_font.getLineSpacing(17)));
 
 	while (window->isOpen()) {
 
 		prevTime = currentTime;
 		currentTime = timeClock.getElapsedTime();
+
+		// camera movements
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
+			float dt = currentTime.asSeconds() - prevTime.asSeconds();
+			float moveSpeed = 300.0f * dt;
+			cam->move(0.0f, -moveSpeed);
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
+			float dt = currentTime.asSeconds() - prevTime.asSeconds();
+			float moveSpeed = 300.0f * dt;
+			cam->move(-moveSpeed, 0.0f);
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
+			float dt = currentTime.asSeconds() - prevTime.asSeconds();
+			float moveSpeed = 300.0f * dt;
+			cam->move(0.0f, moveSpeed);
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
+			float dt = currentTime.asSeconds() - prevTime.asSeconds();
+			float moveSpeed = 300.0f * dt;
+			cam->move(moveSpeed, 0.0f);
+		}
 
 		cam->update();
 		window->setView(cam->view);
@@ -63,6 +92,8 @@ int main() {
 			FPSClockUpdate.restart();
 		}
 
+		fps_counter_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16));
+
 		static int i = 0;
 
 		// handle events
@@ -84,24 +115,27 @@ int main() {
 		c.setFillColor(sf::Color::White);
 		c.setPosition(mapa->getTile(0, 0, 0)->hexagon.getPoint(i));
 
+		std::ostringstream os;
+		os << std::fixed << std::setprecision(2) << cam->position.x << " " << cam->position.y;
+		cam_position_text.setString(os.str());
+		cam_position_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16) + sf::Vector2f(0, basic_font.getLineSpacing(17)));
+
 		if (mapa->selected_tile != nullptr)
 			tile_coords_text.setString(
 				"tile: " +
-				std::to_string(mapa->selected_tile->coords.x) + " " + 
-				std::to_string(mapa->selected_tile->coords.y) + " " + 
+				std::to_string(mapa->selected_tile->coords.x) + " " +
+				std::to_string(mapa->selected_tile->coords.y) + " " +
 				std::to_string(mapa->selected_tile->coords.z));
 		else
 			tile_coords_text.setString("none");
+		tile_coords_text.setPosition(cam->position - cam->view.getSize() / 2.0f + sf::Vector2f(16, 16) + sf::Vector2f(0, 2 * basic_font.getLineSpacing(17)));
 
 		// render
-		sf::View v;
-		v = window->getView();
-		v.setCenter(0,0);
-		window->setView(v);
 		window->clear();
 		mapa->draw();
 		window->draw(c);
 		window->draw(fps_counter_text);
+		window->draw(cam_position_text);
 		window->draw(tile_coords_text);
 		window->display();
 	}

@@ -94,15 +94,6 @@ public:
 		//create(0,0,2,2);
 	}
 
-	Tile* getTile(int q, int r) {
-		for (auto& tile : tiles) {
-			if (tile->coords.x == q && tile->coords.y == r)
-				return tile;
-		}
-
-		return nullptr;
-	}
-
 	Tile* getTile(int q, int r, int s) {
 		for (auto& tile : tiles) {
 			if (tile->coords.x == q && tile->coords.y == r && tile->coords.z == s)
@@ -217,7 +208,7 @@ public:
 		for (auto& t : getTiles(0, 0, 0, 2))
 			t->color = sf::Color(48, 48, 128);
 
-		for (auto& t : getTilesRing(0, 0, 0, 6))
+		for (auto& t : getTilesRing(0, 0, 0, n))
 			t->color = sf::Color(64, 64, 64);
 
 	}
